@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netauto
+  labels: {app: netauto}
+spec:
+  replicas: 2                      # survive one pod/node failure
+  selector:
+    matchLabels: {app: netauto}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}   # zero-downtime deploys
+  template:
+    metadata:
+      labels: {app: netauto}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: netauto
+          image: ghcr.io/YOUR_GITHUB_USER/netauto:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: LOG_LEVEL
+              value: INFO
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits:   {cpu: 500m, memory: 256Mi}
+          livenessProbe:            # restart the container if it hangs
+            httpGet: {path: /healthz, port: 8000}
+            periodSeconds: 10
+          readinessProbe:           # only send traffic once it can serve
+            httpGet: {path: /readyz, port: 8000}
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: netauto
+  labels: {app: netauto}
+spec:
+  selector: {app: netauto}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000

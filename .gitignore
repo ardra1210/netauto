@@ -1,0 +1,21 @@
+# Private notes — not for the public repo
+INTERVIEW_GUIDE.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Generated output
+build/
+build-test/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

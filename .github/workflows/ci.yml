@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check app tests
+      - name: Validate every rack in the source of truth
+        run: python -m app.cli validate-all --allow sjc01-r02-broken
+      - name: Unit + integration tests
+        run: pytest -q --cov=app --cov-report=term-missing --cov-fail-under=80
+
+  docker:
+    needs: test                      # never build an image from failing code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t netauto:${{ github.sha }} .
+      - name: Smoke test the container
+        run: |
+          docker run -d --name netauto -p 8000:8000 netauto:${{ github.sha }}
+          for i in $(seq 1 20); do curl -fs localhost:8000/healthz && break; sleep 1; done
+          curl -fs -X POST localhost:8000/api/v1/day0/racks/sjc01-r01/render > /dev/null
+          docker logs netauto

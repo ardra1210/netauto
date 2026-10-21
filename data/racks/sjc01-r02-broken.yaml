@@ -1,0 +1,41 @@
+# Deliberately broken rack used to demo the validator. Mistakes:
+#   1. VLAN 999 is used but never defined
+#   2. leaf ASN 65101 is duplicated
+#   3. a cable points at a port that doesn't exist (Ethernet52)
+#   4. a cable connects leaf to leaf
+#   5. leaf1 Ethernet49 is cabled twice
+rack_id: sjc01-r02-broken
+site: sjc01
+loopback_pool: 10.255.1.0/24
+p2p_pool: 10.254.1.0/24
+
+vlans:
+  - {id: 100, name: compute}
+
+devices:
+  - name: sjc01-r02-leaf1
+    role: leaf
+    asn: 65101
+    mgmt_ip: 10.0.1.11/24
+    interfaces:
+      - {name: Ethernet1,  description: server-01, mode: access, vlan: 999}
+      - {name: Ethernet49, description: uplink,    mode: routed}
+
+  - name: sjc01-r02-leaf2
+    role: leaf
+    asn: 65101
+    mgmt_ip: 10.0.1.12/24
+    interfaces:
+      - {name: Ethernet49, description: uplink, mode: routed}
+
+  - name: sjc01-spine3
+    role: spine
+    asn: 65000
+    mgmt_ip: 10.0.1.1/24
+    interfaces:
+      - {name: Ethernet1, description: leaf1, mode: routed}
+
+cables:
+  - {a_device: sjc01-r02-leaf1, a_port: Ethernet49, b_device: sjc01-spine3,    b_port: Ethernet1}
+  - {a_device: sjc01-r02-leaf1, a_port: Ethernet49, b_device: sjc01-r02-leaf2, b_port: Ethernet49}
+  - {a_device: sjc01-r02-leaf2, a_port: Ethernet52, b_device: sjc01-spine3,    b_port: Ethernet1}

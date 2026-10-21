@@ -1,0 +1,57 @@
+# Rack context for one rack in the (fictional) sjc01 data center.
+# Topology: 2 leaf (top-of-rack) switches, each cabled to 2 spines.
+rack_id: sjc01-r01
+site: sjc01
+loopback_pool: 10.255.0.0/24   # one /32 per switch
+p2p_pool: 10.254.0.0/24        # one /31 per leaf-spine cable
+
+vlans:
+  - {id: 100, name: compute}
+  - {id: 200, name: storage}
+  - {id: 300, name: mgmt-hosts}
+
+devices:
+  - name: sjc01-r01-leaf1
+    role: leaf
+    asn: 65101
+    mgmt_ip: 10.0.0.11/24
+    interfaces:
+      - {name: Ethernet1,  description: server-01-nic0, mode: access, vlan: 100}
+      - {name: Ethernet2,  description: server-02-nic0, mode: access, vlan: 100}
+      - {name: Ethernet3,  description: storage-01,     mode: access, vlan: 200}
+      - {name: Ethernet10, description: hypervisor-01,  mode: trunk,  allowed_vlans: [100, 200, 300]}
+      - {name: Ethernet49, description: uplink-spine1,  mode: routed}
+      - {name: Ethernet50, description: uplink-spine2,  mode: routed}
+
+  - name: sjc01-r01-leaf2
+    role: leaf
+    asn: 65102
+    mgmt_ip: 10.0.0.12/24
+    interfaces:
+      - {name: Ethernet1,  description: server-01-nic1, mode: access, vlan: 100}
+      - {name: Ethernet2,  description: server-02-nic1, mode: access, vlan: 100}
+      - {name: Ethernet3,  description: unused,         mode: access, vlan: 300, enabled: false}
+      - {name: Ethernet49, description: uplink-spine1,  mode: routed}
+      - {name: Ethernet50, description: uplink-spine2,  mode: routed}
+
+  - name: sjc01-spine1
+    role: spine
+    asn: 65000
+    mgmt_ip: 10.0.0.1/24
+    interfaces:
+      - {name: Ethernet1, description: sjc01-r01-leaf1, mode: routed}
+      - {name: Ethernet2, description: sjc01-r01-leaf2, mode: routed}
+
+  - name: sjc01-spine2
+    role: spine
+    asn: 65000
+    mgmt_ip: 10.0.0.2/24
+    interfaces:
+      - {name: Ethernet1, description: sjc01-r01-leaf1, mode: routed}
+      - {name: Ethernet2, description: sjc01-r01-leaf2, mode: routed}
+
+cables:
+  - {a_device: sjc01-r01-leaf1, a_port: Ethernet49, b_device: sjc01-spine1, b_port: Ethernet1}
+  - {a_device: sjc01-r01-leaf1, a_port: Ethernet50, b_device: sjc01-spine2, b_port: Ethernet1}
+  - {a_device: sjc01-r01-leaf2, a_port: Ethernet49, b_device: sjc01-spine1, b_port: Ethernet2}
+  - {a_device: sjc01-r01-leaf2, a_port: Ethernet50, b_device: sjc01-spine2, b_port: Ethernet2}
